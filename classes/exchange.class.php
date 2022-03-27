@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: apis.inc.php,v 1.0.1 2022/03/24 22:22:08 kyau Exp $
+ * $KYAULabs: exchange.class.php,v 1.0.0 2022/03/26 17:20:03 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -10,8 +10,8 @@
  * ▄ ▀▀ ▀ ▀▀▀▀ ▀▀ ▀ ▀▀▀▀    ▀▀▀▀ ▀▀ ▀ ▀▀▀▀ ▀▀▀  █
  * ▀▀▀▀▀▀▀▀▀▀▀▀▀▀ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ ▀▀▀▀▀▀▀▀▀▀▀▀▀
  *
- * Crypto Exchange APIs
- * Copyright (C) 2021 KYAU Labs (https://kyaulabs.com)
+ * Chartfolio
+ * Copyright (C) 2022 KYAU Labs (https://kyaulabs.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,6 +29,7 @@
 
 namespace APIs
 {
+
     /**
      * Aurora Crypto APIs
      *
@@ -39,15 +40,21 @@ namespace APIs
     class Exchange
     {
         /**
+         * @var string $api_key Exchange API Key.
+         * @var string $api_secret Exchange API Secret Key.
+         */
+        protected $api_key = "";
+        protected $api_secret = "";
+
+        /**
          * @param array $headers Extra headers to send with request.
          * @param string $url Full URL to request.
          *
          * @return $array $json JSON Decoded array containing the results.
          */
-        protected function curl_get(string $url = null, array $headers = [])
+        protected function curlRequest(string $url = null, array $headers = [])
         {
-            if ($url == null)
-            {
+            if ($url == null) {
                 throw new \Exception('Required parameter is null.');
                 return 0;
             }
@@ -66,12 +73,10 @@ namespace APIs
             curl_setopt($c, CURLOPT_TCP_FASTOPEN, true);
             curl_setopt($c, CURLOPT_CONNECTTIMEOUT, 5);
             curl_setopt($c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2TLS);
-            curl_setopt($c, CURLOPT_HEADERFUNCTION, function ($c, $h) use (&$json_headers)
-            {
+            curl_setopt($c, CURLOPT_HEADERFUNCTION, function ($c, $h) use (&$json_headers) {
                 $len = strlen($h);
                 $h = explode(':', $h, 2);
-                if (count($h) < 2)
-                {
+                if (count($h) < 2) {
                     // ignore invalid headers
                     return $len;
                 }
@@ -86,82 +91,6 @@ namespace APIs
             curl_close($c);
             return $json;
         }
-    }
-
-    class Binance extends Exchange
-    {
-        /**
-         * @var string $url Base API URL.
-         */
-        protected $url = "https://api.binance.us";
-
-        /**
-         * @var string $api_key Binance API Key.
-         * @var string $api_secret Binance API Secret Key.
-         */
-        private $api_key = "";
-        private $api_secret = "";
-
-        /**
-         * @param string $key Binance API Key.
-         * @param string $secret Binance API Secret Key.
-         *
-         * @return bool Return true if success.
-         */
-        public function __construct(string $key = null, string $secret = null)
-        {
-            if (count(array_filter(array($key, $secret))) == 1)
-            {
-                throw new \Exception('Required parameter is null.');
-                return 0;
-            } else
-            {
-                $this->api_key = $key;
-                $this->api_secret = $secret;
-                return 1;
-            }
-        }
-
-        /**
-         * @param string $endpoint API Endpoint to get data from.
-         * @param string $request API Request parameters.
-         *
-         * @return array $json API returned data converted from JSON.
-         */
-        private function api_get(string $endpoint = null, string $request = null)
-        {
-            if ($endpoint == null)
-            {
-                throw new \Exception('Required parameter is null.');
-                return 0;
-            }
-            // Get timestamp to send with API request
-            $timestamp = time() . "000";
-            // Signature to hash
-            $request = ($request == null) ? "timestamp=" . $timestamp : $request . "&timestamp=" . $timestamp;
-            $signature = hash_hmac("sha256", $request, $this->api_secret, false);
-            // Combine the full URL
-            $turl = $this->url . $endpoint . "?" . $request . "&signature=" . $signature;
-            // Send request with proper headers
-            $headers[] = "X-MBX-APIKEY: " . $this->api_key;
-            return $this->curl_get($turl, $headers);
-        }
-
-        /**
-         * @return array $json API returned data converted from JSON.
-         */
-        public function get_balances()
-        {
-            return $this->api_get("/api/v3/account");
-        }
-    }
-
-    class Bybit extends Exchange
-    {
-    }
-
-    class FTX extends Exchange
-    {
     }
 
 }
