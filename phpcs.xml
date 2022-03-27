@@ -5,6 +5,7 @@
     <file>chartfolio.php</file>
     <file>settings.example.php</file>
     <file>settings.inc.php</file>
+    <file>timer.php</file>
     <file>classes/exchange.class.php</file>
     <file>classes/binance.inc.php</file>
     <file>classes/bybit.inc.php</file>
