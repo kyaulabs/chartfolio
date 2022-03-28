@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: bybit.inc.php,v 1.0.2 2022/03/28 09:06:00 kyau Exp $
+ * $KYAULabs: bybit.inc.php,v 1.0.3 2022/03/28 15:30:23 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -67,7 +67,7 @@ namespace APIs
             // Get timestamp to send with API request
             $timestamp = time() . "000";
             // Signature to hash
-            $request = ($request == null) ? "api_key=" . $this->api_key . "&timestamp=" . $timestamp : $request . "api_key=" . $this->api_key . "&timestamp=" . $timestamp;
+            $request = ($request == null) ? "api_key=" . $this->api_key . "&timestamp=" . $timestamp : "api_key=" . $this->api_key . "&" . $request . "&timestamp=" . $timestamp;
             $signature = hash_hmac("sha256", $request, $this->api_secret, false);
             // Combine the full URL
             $turl = $this->url . $endpoint . "?" . $request . "&sign=" . $signature;
@@ -123,6 +123,38 @@ namespace APIs
         public function getBalances()
         {
             return $this->apiLookup("/v2/private/wallet/balance");
+        }
+
+        /**
+         * Retrieve all previous orders based on watched pairs.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getTrades(string $pair = null)
+        {
+            if ($pair == null) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            if (substr($pair, -4) == "USDT") {
+                return $this->apiLookup("/private/linear/trade/closed-pnl/list", "symbol=" . $pair);
+            } else {
+                return $this->apiLookup("/private/trade/closed-pnl/list", "symbol=" . $pair);
+            }
+        }
+
+        /**
+         * Retrieve a specific order from the account history.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getOrder(string $pair = null, int $orderId = null)
+        {
+            if (count(array_filter(array($pair, $orderId))) == 1) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            return $this->apiLookup("/api/v3/order", "symbol=" . $pair . "&orderId=" . $orderId);
         }
     }
 

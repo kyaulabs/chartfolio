@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: update.class.php,v 1.0.2 2022/03/28 09:30:50 kyau Exp $
+ * $KYAULabs: update.class.php,v 1.0.4 2022/03/28 16:36:17 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -272,6 +272,134 @@ namespace Chartfolio {
             $a = $this->updateBinanceBalances();
             $b = $this->updateBybitBalances();
             $c = $this->updateFTXBalances();
+            $ret = $a * $b * $c;
+            return $ret;
+        }
+
+        /**
+         * Update Trades for Binance.
+         *
+         * @return bool Return true if success.
+         */
+        public function updateBinanceTrades(bool $debug = false)
+        {
+            echo "Refreshing Binance Trade History...\n";
+            $ret = $this->sql->query("SELECT `pair` FROM `binance_pairs` WHERE `watch` = 1");
+            $symbols = $ret->fetchAll();
+            foreach ($symbols as $s) {
+                $symbol = $s['pair'];
+                if ($debug) {
+                    echo $symbol . "\n";
+                }
+                $binanceTrades = $this->binance->getTrades($symbol);
+                foreach ($binanceTrades as $i) {
+                    $c = $this->sql->query("SELECT Count(*) as `total` FROM `binance_trade_history` WHERE `pair` = :pair AND `order_id` = :order_id", array(':pair' => $i['symbol'], ':order_id' => $i['orderId']));
+                    $count = $c->fetchObject();
+                    if ($count->total == 0) {
+                        if ($debug) {
+                            echo $i['symbol'] . ": " . $i['price'] . " * " . $i['qty'] . " (" . $i['orderId'] . ")\n";
+                        }
+                        $order = $this->binance->getOrder($symbol, $i['orderId']);
+                        $isMaker = "TAKER";
+                        if ($i['isMaker']) {
+                            $isMaker = "MAKER";
+                        }
+                        $vars = array(
+                            ':pair' => $i['symbol'], ':order_id' => $i['orderId'], 'price' => $i['price'],
+                            ':quantity' => $order['executedQty'], ':type' => $order['type'], ':type_market' => $isMaker,
+                            ':type_side' => $order['side'], ':stop_price' => $order['stopPrice'], ':datetime' => substr($order['updateTime'], 0, -3),
+                            ':commission' => $i['commission'], ':commission_ticker' => $i['commissionAsset'], ':status' => $order['status']
+                        );
+                        $this->sql->query("INSERT INTO `binance_trade_history` (`id`, `pair`, `order_id`, `price`, `quantity`, `type`, `type_market`, `type_side`, `stop_price`, `datetime`, `commission`, `commission_ticker`, `status`) VALUES (NULL, :pair, :order_id, :price, :quantity, :type, :type_market, :type_side, :stop_price, FROM_UNIXTIME(:datetime), :commission, :commission_ticker, :status)", $vars);
+                    }
+                }
+            }
+            return 1;
+        }
+
+        /**
+         * Update Trades for Bybit.
+         *
+         * @return bool Return true if success.
+         */
+        public function updateBybitTrades(bool $debug = false)
+        {
+            echo "Refreshing Bybit Trade History...\n";
+            $ret = $this->sql->query("SELECT `pair` FROM `bybit_pairs` WHERE `watch` = 1");
+            $symbols = $ret->fetchAll();
+            foreach ($symbols as $s) {
+                $symbol = $s['pair'];
+                if ($debug) {
+                    echo $symbol . "\n";
+                }
+                $bybitTrades = $this->bybit->getTrades($symbol);
+                foreach ($bybitTrades['result']['data'] as $i) {
+                    $c = $this->sql->query("SELECT Count(*) as `total` FROM `bybit_trade_history` WHERE `pair` = :pair AND `order_id` = UUID_TO_BIN(:order_id)", array(':pair' => $i['symbol'], ':order_id' => $i['order_id']));
+                    $count = $c->fetchObject();
+                    if ($count->total == 0) {
+                        if ($debug) {
+                            echo $i['symbol'] . ": " . $i['order_price'] . " * " . $i['qty'] . " (" . $i['order_id'] . ")\n";
+                        }
+                        $vars = array(
+                            ':pair' => $i['symbol'], ':order_id' => $i['order_id'], 'price' => $i['order_price'],
+                            ':quantity' => $i['qty'], ':type' => $i['order_type'], ':type_side' => $i['side'],
+                            ':exec_type' => $i['exec_type'], ':closed_quantity' => $i['closed_size'],
+                            ':avg_entry' => $i['avg_entry_price'], ':avg_exit' => $i['avg_exit_price'],
+                            ':datetime' => substr($i['created_at'], 0, -3), ':leverage' => $i['leverage'],
+                            ':closed_pnl' => $i['closed_pnl']
+                        );
+                        $this->sql->query("INSERT INTO `bybit_trade_history` (`id`, `pair`, `order_id`, `price`, `quantity`, `type`, `type_side`, `exec_type`, `closed_quantity`, `avg_entry`, `avg_exit`, `datetime`, `leverage`, `closed_pnl`) VALUES (NULL, :pair, UUID_TO_BIN(:order_id), :price, :quantity, :type, :type_side, :exec_type, :closed_quantity, :avg_entry, :avg_exit, FROM_UNIXTIME(:datetime), :leverage, :closed_pnl)", $vars);
+                    }
+                }
+            }
+            return 1;
+        }
+
+        /**
+         * Update Trades for FTX.
+         *
+         * @return bool Return true if success.
+         */
+        public function updateFTXTrades(bool $debug = false)
+        {
+            echo "Refreshing FTX Trade History...\n";
+			$ret = $this->sql->query("SELECT `pair` FROM `ftx_pairs` WHERE `watch` = 1");
+			$symbols = $ret->fetchAll();
+            foreach ($symbols as $s) {
+                $symbol = $s['pair'];
+                if ($debug) {
+                    echo $symbol . "\n";
+                }
+                $ftxTrades = $this->ftx->getTrades($symbol);
+                foreach ($ftxTrades['result'] as $i) {
+                    $c = $this->sql->query("SELECT Count(*) as `total` FROM `ftx_trade_history` WHERE `pair` = :pair AND `order_id` = :order_id", array(':pair' => $i['market'], ':order_id' => $i['id']));
+                    $count = $c->fetchObject();
+                    if ($count->total == 0) {
+                        if ($debug) {
+                            echo $i['market'] . ": " . $i['price'] . " * " . $i['size'] . " (" . $i['id'] . ")\n";
+                        }
+                        $vars = array(
+                            ':pair' => $i['market'], ':order_id' => $i['id'], ':price' => $i['price'],
+                            ':quantity' => $i['size'], ':type' => strtoupper($i['type']), ':type_side' => strtoupper($i['side']),
+                            ':datetime' => substr($i['createdAt'], 0, -13), ':status' => strtoupper($i['status'])
+                        );
+                        $this->sql->query("INSERT INTO `ftx_trade_history` (`id`, `pair`, `order_id`, `price`, `quantity`, `type`, `type_side`, `datetime`, `status`) VALUES(NULL, :pair, :order_id, :price, :quantity, :type, :type_side, :datetime, :status)", $vars);
+                    }
+                }
+            }
+            return 1;
+        }
+
+        /**
+         * Update Trade History for all Exchanges.
+         *
+         * @return bool Return true if success.
+         */
+        public function updateTrades()
+        {
+            $a = $this->updateBinanceTrades();
+            $b = $this->updateBybitTrades();
+            $c = $this->updateFTXTrades();
             $ret = $a * $b * $c;
             return $ret;
         }

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: timer.php,v 1.0.5 2022/03/28 08:52:12 kyau Exp $
+ * $KYAULabs: timer.php,v 1.0.6 2022/03/28 16:43:33 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -30,6 +30,8 @@
 ini_set('default_charset', 'UTF-8');
 date_default_timezone_set('UTC');
 
+define('SYSTIME', date('i'));
+
 include_once('../aurora/sql.inc.php');
 include_once('chartfolio.php');
 
@@ -39,8 +41,43 @@ $bybit = new \APIs\Bybit();
 $ftx = new \APIs\FTX();
 $timer = new \Chartfolio\Update($binance, $bybit, $ftx, $sql);
 
+
 $timer->updatePairs();
 $timer->updateBalances();
+$timer->updateTrades();
+exit;
+
+switch (SYSTIME) {
+	case 0:
+		// every 5 minutes
+		$timer->updateBalances();
+		$timer->updateTrades();
+		// every 15 minutes
+		//deposit/withdrawal
+		// hourly
+		$timer->updatePairs();
+		break;
+	case 5:
+	case 10:
+	case 20:
+	case 25:
+	case 35:
+	case 40:
+	case 50:
+	case 55:
+		// every 5 minutes
+		$timer->updateBalances();
+		$timer->updateTrades();
+		break;
+	case 15:
+	case 30:
+	case 45:
+		// every 15 minutes
+		//deposit/withdrawal
+		break;
+	default:
+		break;
+}
 
 
 /**

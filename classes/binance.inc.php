@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: binance.inc.php,v 1.0.2 2022/03/28 09:05:49 kyau Exp $
+ * $KYAULabs: binance.inc.php,v 1.0.3 2022/03/28 10:51:34 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -129,6 +129,34 @@ namespace APIs
         public function getBalances()
         {
             return $this->apiLookup("/api/v3/account");
+        }
+
+        /**
+         * Retrieve all previous orders based on watched pairs.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getTrades(string $pair = null)
+        {
+            if ($pair == null) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            return $this->apiLookup("/api/v3/myTrades", "symbol=" . $pair);
+        }
+
+        /**
+         * Retrieve a specific order from the account history.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getOrder(string $pair = null, int $orderId = null)
+        {
+            if (count(array_filter(array($pair, $orderId))) == 1) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            return $this->apiLookup("/api/v3/order", "symbol=" . $pair . "&orderId=" . $orderId);
         }
     }
 

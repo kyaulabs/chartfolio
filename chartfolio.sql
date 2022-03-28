@@ -1,4 +1,4 @@
--- $KYAULabs: chartfolio.sql,v 1.1.0 2022/03/28 09:30:20 kyau Exp $
+-- $KYAULabs: chartfolio.sql,v 1.1.2 2022/03/28 13:45:54 kyau Exp $
 -- ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 -- █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
 -- █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -33,6 +33,36 @@ SET time_zone = "+00:00";
 --
 CREATE DATABASE IF NOT EXISTS `chartfolio` DEFAULT CHARACTER SET ascii COLLATE ascii_general_ci;
 USE `chartfolio`;
+
+-- --------------------------------------------------------
+
+--
+-- Functions
+--
+DELIMITER //
+
+CREATE FUNCTION BIN_TO_UUID(b BINARY(16))
+RETURNS CHAR(36)
+BEGIN
+   DECLARE hexStr CHAR(32);
+   SET hexStr = HEX(b);
+   RETURN LOWER(CONCAT(
+        SUBSTR(hexStr, 1, 8), '-',
+        SUBSTR(hexStr, 9, 4), '-',
+        SUBSTR(hexStr, 13, 4), '-',
+        SUBSTR(hexStr, 17, 4), '-',
+        SUBSTR(hexStr, 21)
+    ));
+END//
+
+CREATE FUNCTION UUID_TO_BIN(uuid CHAR(36))
+RETURNS BINARY(16)
+BEGIN
+    RETURN UNHEX(REPLACE(uuid, '-', ''));
+END//
+
+DELIMITER ;
+
 
 -- --------------------------------------------------------
 
@@ -172,8 +202,9 @@ USE `chartfolio`;
 -- Table structure for table `binance_pairs`
 --
 CREATE TABLE `binance_pairs` (
-	`id` INT(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Pair ID',
+	`id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Pair ID',
 	`pair` varchar(16) NOT NULL COMMENT 'Pair Symbol',
+	`watch` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Pair is Traded, Lookup Orders',
 	`ticker_base` varchar(16) NOT NULL COMMENT 'Pair Base Ticker',
 	`ticker_quote` varchar(16) NOT NULL COMMENT 'Pair Quote Ticker',
 	`scale_base` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'Base Ticker Max Decimal Places',
@@ -188,8 +219,9 @@ CREATE TABLE `binance_pairs` (
 	`price_24h_pcnt` decimal(10,6) signed NOT NULL DEFAULT 0 COMMENT 'Percentage Change of Market Price Relative to 24h',
 	`volume_24h` int(16) unsigned NOT NULL DEFAULT 0 COMMENT 'Trading Volume Relative to 24h',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `pair_uniq` (`pair`),
-	KEY `price` (`mark_price`)
+	UNIQUE KEY `pair` (`pair`),
+	KEY `mark_price` (`mark_price`),
+	KEY `watch` (`watch`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -286,8 +318,9 @@ CREATE TABLE `binance_pairs` (
 -- Table structure for table `bybit_pairs`
 --
 CREATE TABLE `bybit_pairs` (
-	`id` INT(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Pair ID',
+	`id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Pair ID',
 	`pair` varchar(16) NOT NULL COMMENT 'Pair Symbol',
+	`watch` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Pair is Traded, Lookup Orders',
 	`ticker_base` varchar(16) NOT NULL COMMENT 'Pair Base Ticker',
 	`ticker_quote` varchar(16) NOT NULL COMMENT 'Pair Quote Ticker',
 	`scale_quote` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'Quote Ticker Max Decimal Places',
@@ -301,8 +334,9 @@ CREATE TABLE `bybit_pairs` (
 	`price_24h_pcnt` decimal(10,6) signed NOT NULL DEFAULT 0 COMMENT 'Percentage Change of Market Price Relative to 24h',
 	`volume_24h` int(16) unsigned NOT NULL DEFAULT 0 COMMENT 'Trading Volume Relative to 24h',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `pair_uniq` (`pair`),
-	KEY `price` (`mark_price`)
+	UNIQUE KEY `pair` (`pair`),
+	KEY `mark_price` (`mark_price`),
+	KEY `watch` (`watch`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -355,8 +389,9 @@ CREATE TABLE `bybit_pairs` (
 -- Table structure for table `ftx_pairs`
 --
 CREATE TABLE `ftx_pairs` (
-	`id` INT(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Pair ID',
+	`id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Pair ID',
 	`pair` varchar(16) NOT NULL COMMENT 'Pair Symbol',
+	`watch` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Pair is Traded, Lookup Orders',
 	`ticker_base` varchar(16) NOT NULL COMMENT 'Pair Base Ticker',
 	`ticker_quote` varchar(16) NOT NULL COMMENT 'Pair Quote Ticker',
 	`scale_quote` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'Quote Ticker Max Decimal Places',
@@ -366,8 +401,9 @@ CREATE TABLE `ftx_pairs` (
 	`price_24h_pcnt` decimal(10,6) signed NOT NULL DEFAULT 0 COMMENT 'Percentage Change of Market Price Relative to 24h',
 	`volume_24h` int(16) unsigned NOT NULL DEFAULT 0 COMMENT 'Trading Volume Relative to 24h',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `pair_uniq` (`pair`),
-	KEY `price` (`mark_price`)
+	UNIQUE KEY `pair` (`pair`),
+	KEY `mark_price` (`mark_price`),
+	KEY `watch` (`watch`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -402,12 +438,12 @@ CREATE TABLE `ftx_pairs` (
 -- Table structure for table `binance_wallet`
 --
 CREATE TABLE `binance_wallet` (
-	`id` INT(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Asset ID',
+	`id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Asset ID',
 	`ticker` varchar(16) NOT NULL COMMENT 'Asset Ticker',
 	`free` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Amount Available',
 	`locked` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Amount Locked in Trades',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `ticker_uniq` (`ticker`)
+	UNIQUE KEY `ticker` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -450,7 +486,7 @@ CREATE TABLE `binance_wallet` (
 -- Table structure for table `bybit_wallet`
 --
 CREATE TABLE `bybit_wallet` (
-	`id` INT(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Asset ID',
+	`id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Asset ID',
 	`ticker` varchar(16) NOT NULL COMMENT 'Asset Ticker',
 	`equity` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'equity = wallet_balance + unrealized_pnl',
 	`available` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'available_balance',
@@ -470,7 +506,7 @@ CREATE TABLE `bybit_wallet` (
 	`given_cash` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Experience gold',
 	`service_cash` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Service cash is used for user\'s service charge',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `ticker_uniq` (`ticker`)
+	UNIQUE KEY `ticker` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -507,14 +543,14 @@ CREATE TABLE `bybit_wallet` (
 -- Table structure for table `ftx_wallet`
 --
 CREATE TABLE `ftx_wallet` (
-	`id` INT(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Asset ID',
+	`id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Asset ID',
 	`ticker` varchar(16) NOT NULL COMMENT 'Asset Ticker',
 	`free` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Free amount',
 	`spot_borrow` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Amount borrowed using spot margin',
 	`total` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Total amount',
 	`available` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Amount available without borrowing',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `ticker_uniq` (`ticker`)
+	UNIQUE KEY `ticker` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -598,8 +634,8 @@ CREATE TABLE `binance_trade_history` (
 	`status` varchar(16) NOT NULL COMMENT 'Binance Order Status',
 		-- NEW, PARTIALLY_FILLED, FILLED, CANCELED, PENDING_CANCEL, REJECTED, EXPIRED
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `pair_uniq` (`pair`),
-	UNIQUE KEY `orderid_uniq` (`order_id`)
+	UNIQUE KEY `order_id` (`order_id`),
+	KEY `pair` (`pair`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -652,46 +688,6 @@ CREATE TABLE `binance_trade_history` (
   "rate_limit_reset_ms": 1647122957057,
   "rate_limit": 120
 }
-
-:/private/linear/trade/execution/list
-{
-  "ret_code": 0,
-  "ret_msg": "OK",
-  "ext_code": "",
-  "ext_info": "",
-  "result": {
-    "current_page": 1,
-    "data": [
-      {
-        "order_id": "89e635de-1be4-499f-b130-76f2bb04dd6a",
-        "order_link_id": "",
-        "side": "Sell",
-        "symbol": "BTCUSDT",
-        "exec_id": "e0e62a99-8c71-5542-a00a-4b41588b6369",
-        "price": 37051.5,
-        "order_price": 37051.5,
-        "order_qty": 0.001,
-        "order_type": "Market",
-        "fee_rate": 0.00075,
-        "exec_price": 38323,
-        "exec_type": "Trade",
-        "exec_qty": 0.001,
-        "exec_fee": 0.02874225,
-        "exec_value": 38.323,
-        "leaves_qty": 0,
-        "closed_size": 0.001,
-        "last_liquidity_ind": "RemovedLiquidity",
-        "trade_time": 1647032087,
-        "trade_time_ms": 1647032087245
-      },
-      ...
-    ]
-  },
-  "time_now": "1647123288.779885",
-  "rate_limit_status": 119,
-  "rate_limit_reset_ms": 1647123288394,
-  "rate_limit": 120
-}
 */
 
 --
@@ -706,18 +702,15 @@ CREATE TABLE `bybit_trade_history` (
 	`type` varchar(18) NOT NULL COMMENT 'Bybit Order Type',
 	`type_side` varchar(5) NOT NULL DEFAULT 'LONG' COMMENT 'Bybit Order Type Side',
 	`exec_type` varchar(9) NOT NULL DEFAULT 'Trade' COMMENT 'Transaction Type',
-	`exec_price` decimal(19,4) signed NOT NULL DEFAULT 0 COMMENT 'Transaction Price in USD',
-	`exec_quantity` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Transaction Amount',
-	`exec_quantity_left` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Order Amount Remaining Post-Transaction',
-	`exec_fee_rate` decimal(19,5) signed NOT NULL DEFAULT 0 COMMENT 'Maker/Taker Fee Rate',
-	`exec_fee` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Transaction Fee',
+	`closed_quantity` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Closed Asset Amount',
+	`avg_entry` decimal(19,4) signed NOT NULL DEFAULT 0 COMMENT 'Average Entry Price',
+	`avg_exit` decimal(19,4) signed NOT NULL DEFAULT 0 COMMENT 'Average Exit Price',
 	`datetime` datetime NOT NULL COMMENT 'Bybit Order Date & Time',
 	`leverage` tinyint(3) signed NOT NULL DEFAULT 0 COMMENT 'Leverage',
-	`liquidity_type` varchar(16) COMMENT 'Liquidity Type',
 	`closed_pnl` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Closed Profit and Loss',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `pair_uniq` (`pair`),
-	UNIQUE KEY `orderid_uniq` (`order_id`)
+	UNIQUE KEY `order_id` (`order_id`),
+	KEY `pair` (`pair`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 --		`order_id`			UUID_TO_BIN(), BIN_TO_UUID()
 --		`type`				LIMIT, MARKET
@@ -784,8 +777,8 @@ CREATE TABLE `ftx_trade_history` (
 	`datetime` datetime NOT NULL COMMENT 'FTX Order Date & Time',
 	`status` varchar(16) NOT NULL COMMENT 'Binance Order Status',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `pair_uniq` (`pair`),
-	UNIQUE KEY `orderid_uniq` (`order_id`)
+	UNIQUE KEY `order_id` (`order_id`),
+	KEY `pair` (`pair`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 --		`type`			LIMIT, MARKET
 --		`type_side`		BUY, SELL
@@ -833,12 +826,12 @@ CREATE TABLE `binance_deposits` (
 	`quantity` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Deposit Amount',
 	`address_recv` varchar(255) NOT NULL COMMENT 'Received Deposit Address',
 	`network` varchar(16) NOT NULL COMMENT 'Asset Network',
-	`transaction_id` varchar(255) NOT NULL COMMENT 'Transaction ID',
+	`tx_id` varchar(255) NOT NULL COMMENT 'Transaction ID',
 	`datetime` datetime NOT NULL COMMENT 'Deposit Date & Time',
 	`confirmations` varchar(16) NOT NULL COMMENT 'Deposit Confirmations',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `ticker_uniq` (`ticker`),
-	UNIQUE KEY `txid_uniq` (`transaction_id`)
+	UNIQUE KEY `tx_id` (`tx_id`),
+	KEY `ticker` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 --		`datetime`		FROM_UNIXTIME(), UNIX_TIMESTAMP()
 
@@ -893,11 +886,11 @@ CREATE TABLE `bybit_deposits` (
 	`id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Deposit ID',
 	`ticker` varchar(16) NOT NULL COMMENT 'Asset Ticker',
 	`quantity` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Deposit Amount',
-	`transaction_id` varchar(255) NOT NULL COMMENT 'Transaction ID',
+	`tx_id` varchar(255) NOT NULL COMMENT 'Transaction ID',
 	`datetime` datetime NOT NULL COMMENT 'Deposit Date & Time',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `ticker_uniq` (`ticker`),
-	UNIQUE KEY `txid_uniq` (`transaction_id`)
+	UNIQUE KEY `tx_id` (`tx_id`),
+	KEY `ticker` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 --		`datetime`		FROM_UNIXTIME(), UNIX_TIMESTAMP()
 
@@ -971,14 +964,15 @@ CREATE TABLE `ftx_deposits` (
 	`quantity` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Deposit Amount',
 	`fee` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Fee Amount',
 	`network` varchar(16) NOT NULL DEFAULT 'ACH' COMMENT 'Asset Network',
-	`transaction_id` varchar(255) DEFAULT NULL COMMENT 'Transaction ID (Crypto)',
+	`tx_id` varchar(255) DEFAULT NULL COMMENT 'Transaction ID (Crypto)',
 	`payment_id` binary(16) DEFAULT NULL COMMENT 'Payment UUID (Fiat)',
 	`datetime` datetime NOT NULL COMMENT 'Deposit Date & Time',
 	`confirmations` tinyint(3) NOT NULL DEFAULT 0 COMMENT 'Transaction Confirmations',
 	`status` varchar(12) NOT NULL COMMENT 'Deposit Status',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `ticker_uniq` (`ticker`),
-	UNIQUE KEY `pid_uniq` (`payment_id`)
+	KEY `tx_id` (`tx_id`),
+	KEY `payment_id` (`payment_id`),
+	KEY `ticker` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 --		`network`		method
 --		`payment_id`	UUID_TO_BIN(), BIN_TO_UUID()
@@ -1033,8 +1027,8 @@ CREATE TABLE `binance_withdrawals` (
 	`datetime` datetime NOT NULL COMMENT 'Withdrawal Date & Time',
 	`status` varchar(17) NOT NULL COMMENT 'Withdrawal Status',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `ticker_uniq` (`ticker`),
-	UNIQUE KEY `txid_uniq` (`tx_id`)
+	UNIQUE KEY `tx_id` (`tx_id`),
+	KEY `ticker` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 --		`datetime`		FROM_UNIXTIME(), UNIX_TIMESTAMP()
 --		`status`		0:EMAIL_SENT, 1:CANCELLED, 2:AWAITING_APPROVAL, 3:REJECTED,
@@ -1096,8 +1090,8 @@ CREATE TABLE `bybit_withdrawals` (
 	`datetime` datetime NOT NULL COMMENT 'Withdrawal Date & Time',
 	`status` varchar(17) NOT NULL COMMENT 'Withdrawal Status',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `ticker_uniq` (`ticker`),
-	UNIQUE KEY `txid_uniq` (`tx_id`)
+	UNIQUE KEY `tx_id` (`tx_id`),
+	KEY `ticker` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 --		`datetime`		FROM_UNIXTIME(), UNIX_TIMESTAMP()
 --		`status`		TOBECONFIRMED, UNDERREVIEW, PENDING, SUCCESS,
@@ -1153,8 +1147,8 @@ CREATE TABLE `ftx_withdrawals` (
 	`datetime` datetime NOT NULL COMMENT 'Withdrawal Date & Time',
 	`status` varchar(17) NOT NULL COMMENT 'Withdrawal Status',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `ticker_uniq` (`ticker`),
-	UNIQUE KEY `txid_uniq` (`tx_id`)
+	UNIQUE KEY `tx_id` (`tx_id`),
+	KEY `ticker` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 --		`datetime`		FROM_UNIXTIME(), UNIX_TIMESTAMP()
 --		`status`		REQUESTED, PROCESSING, COMPLETE, CANCELLED
