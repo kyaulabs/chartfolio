@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: binance.inc.php,v 1.0.0 2022/03/26 17:20:23 kyau Exp $
+ * $KYAULabs: binance.inc.php,v 1.0.2 2022/03/28 09:05:49 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -56,6 +56,8 @@ namespace APIs
         }
 
         /**
+         * Lookup data from an endpoint that requires authentication.
+         *
          * @param string $endpoint API Endpoint to get data from.
          * @param string $request API Request parameters.
          *
@@ -80,6 +82,48 @@ namespace APIs
         }
 
         /**
+         * Lookup data from a public API endpoint.
+         *
+         * @param string $endpoint API Endpoint to get data from.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        private function apiPublic(string $endpoint = null)
+        {
+            if ($endpoint == null) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            return $this->curlRequest($this->url . $endpoint);
+        }
+
+        /**
+         * Retrieve all tradable asset pairs.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getPairs()
+        {
+            return $this->apiPublic("/api/v3/exchangeInfo");
+        }
+
+        /**
+         * Retrieve a specific assets market information.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getPair(string $pair = null)
+        {
+            if ($pair == null) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            return $this->apiPublic("/api/v3/ticker/24hr?symbol=" . $pair);
+        }
+
+        /**
+         * Retrieve all wallet balances.
+         *
          * @return array $json API returned data converted from JSON.
          */
         public function getBalances()

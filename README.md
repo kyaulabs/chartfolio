@@ -7,6 +7,9 @@ Chartfolio is a cryptocurrency portfolio webapp that has been designed to
 extract data from exchanges and display it in a centralized manner. This is
 a highly custom piece of software that would require much adaptation to re-use.
 
+Chartfolio utilizes [Aurora](https://github.com/kyaulabs/aurora) in order to
+generate the HTML front-pages and access the MySQL database.
+
 ### Exchanges
 Currently Chartfolio supports three exchanges:
 * Binance/Binance.US
@@ -14,6 +17,21 @@ Currently Chartfolio supports three exchanges:
 * FTX/FTX.US
 
 Other exchanges will likely never be added.
+
+### Features / TODO
+- [x] Backend: API Helper
+- [x] Backend: Database Helper
+- [x] Timer Script: Asset Pairs
+- [x] Timer Script: Wallet Balances
+- [ ] Timer Script: Trade History
+- [ ] Timer Script: Deposit History
+- [ ] Timer Script: Withdrawal History
+- [ ] Frontend: Wallet Balances
+- [ ] Frontend: Trade History
+- [ ] Frontend: Deposit History
+- [ ] Frontend: Withdrawal History
+
+Additional features may be added over time.
 
 ### Attribution
 All of the research materials that were needed to make this possible are listed

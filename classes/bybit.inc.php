@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: bybit.inc.php,v 1.0.0 2022/03/26 17:20:40 kyau Exp $
+ * $KYAULabs: bybit.inc.php,v 1.0.2 2022/03/28 09:06:00 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -74,7 +74,50 @@ namespace APIs
             return $this->curlRequest($turl);
         }
 
+
         /**
+         * Lookup data from a public API endpoint.
+         *
+         * @param string $endpoint API Endpoint to get data from.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        private function apiPublic(string $endpoint = null)
+        {
+            if ($endpoint == null) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            return $this->curlRequest($this->url . $endpoint);
+        }
+
+        /**
+         * Retrieve all tradable asset pairs.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getPairs()
+        {
+            return $this->apiPublic("/v2/public/symbols");
+        }
+
+        /**
+         * Retrieve a specific assets market information.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getPair(string $pair = null)
+        {
+            if ($pair == null) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            return $this->apiPublic("/v2/public/tickers?symbol=" . $pair);
+        }
+
+        /**
+         * Retrieve all wallet balances.
+         *
          * @return array $json API returned data converted from JSON.
          */
         public function getBalances()

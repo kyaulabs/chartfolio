@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: ftx.inc.php,v 1.0.0 2022/03/26 17:20:57 kyau Exp $
+ * $KYAULabs: ftx.inc.php,v 1.0.2 2022/03/28 09:06:13 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -79,6 +79,32 @@ namespace APIs
         }
 
         /**
+         * Retrieve all tradable asset pairs.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getPairs()
+        {
+            return $this->apiLookup("/markets");
+        }
+
+        /**
+         * Retrieve a specific assets market information.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getPair(string $pair = null)
+        {
+            if ($pair == null) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            return $this->apiLookup("/markets/" . $pair);
+        }
+
+        /**
+         * Retrieve all wallet balances.
+         *
          * @return array $json API returned data converted from JSON.
          */
         public function getBalances()

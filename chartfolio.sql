@@ -1,4 +1,4 @@
--- $KYAULabs: chartfolio.sql,v 1.0.8 2022/03/26 12:38:57 kyau Exp $
+-- $KYAULabs: chartfolio.sql,v 1.1.0 2022/03/28 09:30:20 kyau Exp $
 -- ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 -- █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
 -- █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -188,7 +188,8 @@ CREATE TABLE `binance_pairs` (
 	`price_24h_pcnt` decimal(10,6) signed NOT NULL DEFAULT 0 COMMENT 'Percentage Change of Market Price Relative to 24h',
 	`volume_24h` int(16) unsigned NOT NULL DEFAULT 0 COMMENT 'Trading Volume Relative to 24h',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `pair_uniq` (`pair`)
+	UNIQUE KEY `pair_uniq` (`pair`),
+	KEY `price` (`mark_price`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -300,7 +301,8 @@ CREATE TABLE `bybit_pairs` (
 	`price_24h_pcnt` decimal(10,6) signed NOT NULL DEFAULT 0 COMMENT 'Percentage Change of Market Price Relative to 24h',
 	`volume_24h` int(16) unsigned NOT NULL DEFAULT 0 COMMENT 'Trading Volume Relative to 24h',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `pair_uniq` (`pair`)
+	UNIQUE KEY `pair_uniq` (`pair`),
+	KEY `price` (`mark_price`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -316,6 +318,7 @@ CREATE TABLE `bybit_pairs` (
 -- Data input structure for table `ftx_pairs`
 --
 /*
+:/markets
 {
   "success": true,
   "result": [
@@ -363,7 +366,8 @@ CREATE TABLE `ftx_pairs` (
 	`price_24h_pcnt` decimal(10,6) signed NOT NULL DEFAULT 0 COMMENT 'Percentage Change of Market Price Relative to 24h',
 	`volume_24h` int(16) unsigned NOT NULL DEFAULT 0 COMMENT 'Trading Volume Relative to 24h',
 	PRIMARY KEY (`id`),
-	UNIQUE KEY `pair_uniq` (`pair`)
+	UNIQUE KEY `pair_uniq` (`pair`),
+	KEY `price` (`mark_price`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -402,7 +406,6 @@ CREATE TABLE `binance_wallet` (
 	`ticker` varchar(16) NOT NULL COMMENT 'Asset Ticker',
 	`free` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Amount Available',
 	`locked` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Amount Locked in Trades',
-	`value` decimal(19,4) signed NOT NULL DEFAULT 0 COMMENT 'Value in USD (Max: 99.9T)',
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `ticker_uniq` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
@@ -466,7 +469,6 @@ CREATE TABLE `bybit_wallet` (
 	`total_realized_pnl` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Total realized profit and loss',
 	`given_cash` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Experience gold',
 	`service_cash` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Service cash is used for user\'s service charge',
-	`value` decimal(19,4) signed NOT NULL DEFAULT 0 COMMENT 'Value in USD (Max: 99.9T)',
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `ticker_uniq` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
@@ -511,7 +513,6 @@ CREATE TABLE `ftx_wallet` (
 	`spot_borrow` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Amount borrowed using spot margin',
 	`total` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Total amount',
 	`available` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Amount available without borrowing',
-	`value` decimal(19,4) signed NOT NULL DEFAULT 0 COMMENT 'Value in USD (Max: 99.9T)',
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `ticker_uniq` (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
