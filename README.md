@@ -23,8 +23,8 @@ Other exchanges will likely never be added.
 - [x] Backend: Database Helper
 - [x] Timer Script: Asset Pairs
 - [x] Timer Script: Wallet Balances
-- [ ] Timer Script: Trade History
-- [ ] Timer Script: Deposit History
+- [x] Timer Script: Trade History
+- [x] Timer Script: Deposit History
 - [ ] Timer Script: Withdrawal History
 - [ ] Frontend: Wallet Balances
 - [ ] Frontend: Trade History

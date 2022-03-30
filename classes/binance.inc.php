@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: binance.inc.php,v 1.0.3 2022/03/28 10:51:34 kyau Exp $
+ * $KYAULabs: binance.inc.php,v 1.0.4 2022/03/28 22:45:50 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -110,6 +110,8 @@ namespace APIs
         /**
          * Retrieve a specific assets market information.
          *
+         * @param string $pair Asset pair to look up.
+         *
          * @return array $json API returned data converted from JSON.
          */
         public function getPair(string $pair = null)
@@ -134,6 +136,8 @@ namespace APIs
         /**
          * Retrieve all previous orders based on watched pairs.
          *
+         * @param string $pair Asset pair to search under.
+         *
          * @return array $json API returned data converted from JSON.
          */
         public function getTrades(string $pair = null)
@@ -148,6 +152,9 @@ namespace APIs
         /**
          * Retrieve a specific order from the account history.
          *
+         * @param string $pair Asset pair to search under.
+         * @param int $orderId Order ID to look up.
+         *
          * @return array $json API returned data converted from JSON.
          */
         public function getOrder(string $pair = null, int $orderId = null)
@@ -157,6 +164,38 @@ namespace APIs
                 return 0;
             }
             return $this->apiLookup("/api/v3/order", "symbol=" . $pair . "&orderId=" . $orderId);
+        }
+
+        /**
+         * Retrieve the deposit history for a specific ticker.
+         *
+         * @param string $ticker Ticker to look for deposits under.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getDeposits(string $ticker = null)
+        {
+            if ($ticker == null) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            return $this->apiLookup("/sapi/v1/capital/deposit/hisrec", "coin=" . $ticker);
+        }
+
+        /**
+         * Retrieve the withdrawal history for a specific ticker.
+         *
+         * @param string $ticker Ticker to look for deposits under.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getWithdrawals(string $ticker = null)
+        {
+            if ($ticker == null) {
+                throw new \Exception('Required parameter is null.');
+                return 0;
+            }
+            return $this->apiLookup("/sapi/v1/capital/withdraw/history", "coin=" . $ticker);
         }
     }
 

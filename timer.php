@@ -42,41 +42,45 @@ $ftx = new \APIs\FTX();
 $timer = new \Chartfolio\Update($binance, $bybit, $ftx, $sql);
 
 
-$timer->updatePairs();
-$timer->updateBalances();
-$timer->updateTrades();
+//$timer->updatePairs();
+//$timer->updateBalances();
+//$timer->updateTrades();
+$timer->updateDeposits();
+//$timer->updateBinanceDeposits(true);
+//$timer->updateBybitDeposits(true);
+//$timer->updateFTXDeposits(true);
 exit;
 
 switch (SYSTIME) {
-	case 0:
-		// every 5 minutes
-		$timer->updateBalances();
-		$timer->updateTrades();
-		// every 15 minutes
-		//deposit/withdrawal
-		// hourly
-		$timer->updatePairs();
-		break;
-	case 5:
-	case 10:
-	case 20:
-	case 25:
-	case 35:
-	case 40:
-	case 50:
-	case 55:
-		// every 5 minutes
-		$timer->updateBalances();
-		$timer->updateTrades();
-		break;
-	case 15:
-	case 30:
-	case 45:
-		// every 15 minutes
-		//deposit/withdrawal
-		break;
-	default:
-		break;
+    case 0:
+        // every 5 minutes
+        $timer->updateBalances();
+        $timer->updateTrades();
+        // every 15 minutes
+        //deposit/withdrawal
+        // hourly
+        $timer->updatePairs();
+        break;
+    case 5:
+    case 10:
+    case 20:
+    case 25:
+    case 35:
+    case 40:
+    case 50:
+    case 55:
+        // every 5 minutes
+        $timer->updateBalances();
+        $timer->updateTrades();
+        break;
+    case 15:
+    case 30:
+    case 45:
+        // every 15 minutes
+        //deposit/withdrawal
+        break;
+    default:
+        break;
 }
 
 

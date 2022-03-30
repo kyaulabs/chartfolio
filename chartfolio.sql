@@ -1,4 +1,4 @@
--- $KYAULabs: chartfolio.sql,v 1.1.2 2022/03/28 13:45:54 kyau Exp $
+-- $KYAULabs: chartfolio.sql,v 1.1.3 2022/03/28 16:49:51 kyau Exp $
 -- ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 -- █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
 -- █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -635,7 +635,8 @@ CREATE TABLE `binance_trade_history` (
 		-- NEW, PARTIALLY_FILLED, FILLED, CANCELED, PENDING_CANCEL, REJECTED, EXPIRED
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `order_id` (`order_id`),
-	KEY `pair` (`pair`)
+	KEY `pair` (`pair`),
+	KEY `datetime` (`datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 
 --
@@ -710,7 +711,8 @@ CREATE TABLE `bybit_trade_history` (
 	`closed_pnl` decimal(24,8) signed NOT NULL DEFAULT 0 COMMENT 'Closed Profit and Loss',
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `order_id` (`order_id`),
-	KEY `pair` (`pair`)
+	KEY `pair` (`pair`),
+	KEY `datetime` (`datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 --		`order_id`			UUID_TO_BIN(), BIN_TO_UUID()
 --		`type`				LIMIT, MARKET
@@ -778,7 +780,8 @@ CREATE TABLE `ftx_trade_history` (
 	`status` varchar(16) NOT NULL COMMENT 'Binance Order Status',
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `order_id` (`order_id`),
-	KEY `pair` (`pair`)
+	KEY `pair` (`pair`),
+	KEY `datetime` (`datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_general_ci;
 --		`type`			LIMIT, MARKET
 --		`type_side`		BUY, SELL

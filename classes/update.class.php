@@ -363,8 +363,8 @@ namespace Chartfolio {
         public function updateFTXTrades(bool $debug = false)
         {
             echo "Refreshing FTX Trade History...\n";
-			$ret = $this->sql->query("SELECT `pair` FROM `ftx_pairs` WHERE `watch` = 1");
-			$symbols = $ret->fetchAll();
+            $ret = $this->sql->query("SELECT `pair` FROM `ftx_pairs` WHERE `watch` = 1");
+            $symbols = $ret->fetchAll();
             foreach ($symbols as $s) {
                 $symbol = $s['pair'];
                 if ($debug) {
@@ -400,6 +400,147 @@ namespace Chartfolio {
             $a = $this->updateBinanceTrades();
             $b = $this->updateBybitTrades();
             $c = $this->updateFTXTrades();
+            $ret = $a * $b * $c;
+            return $ret;
+        }
+
+        /**
+         * Update Deposits for Binance.
+         *
+         * @return bool Return true if success.
+         */
+        public function updateBinanceDeposits(bool $debug = false)
+        {
+            echo "Refreshing Binance Deposit History...\n";
+            $ret = $this->sql->query("SELECT `ticker_base`, `ticker_quote` FROM `binance_pairs` WHERE `watch` = 1");
+            $symbols = $ret->fetchAll();
+            $tickers = array();
+            foreach ($symbols as $s) {
+                $ticka = $s['ticker_base'];
+                $tickb = $s['ticker_quote'];
+                if (! in_array($ticka, $tickers) ) {
+                    array_push($tickers, $ticka);
+                }
+                if (! in_array($tickb, $tickers) ) {
+                    array_push($tickers, $tickb);
+                }
+            }
+            foreach ($tickers as $t) {
+                $binanceDeposits = $this->binance->getDeposits($t);
+                foreach ($binanceDeposits as $i) {
+                    $c = $this->sql->query("SELECT Count(*) as `total` FROM `binance_deposits` WHERE `ticker` = :ticker AND `tx_id` = :tx_id", array(':ticker' => $i['coin'], ':tx_id' => $i['txId']));
+                    $count = $c->fetchObject();
+                    if ($count->total == 0) {
+                        if ($debug) {
+                            echo $i['coin'] . ": " . $i['amount'] . " (" . $i['network'] . " - " . $i['address'] . ")\n";
+                        }
+                        $vars = array(
+                            ':ticker' => $i['coin'], ':quantity' => $i['amount'], ':address_recv' => $i['address'],
+                            ':network' => $i['network'], ':tx_id' => $i['txId'], ':datetime' => substr($i['insertTime'], 0, -3),
+                            ':confirmations' => $i['confirmTimes']
+                        );
+                        $this->sql->query("INSERT INTO `binance_deposits` (`id`, `ticker`, `quantity`, `address_recv`, `network`, `tx_id`, `datetime`, `confirmations`) VALUES (NULL, :ticker, :quantity, :address_recv, :network, :tx_id, FROM_UNIXTIME(:datetime), :confirmations)", $vars);
+                    }
+                }
+            }
+            return 1;
+        }
+
+        /**
+         * Update Deposits for Bybit.
+         *
+         * @return bool Return true if success.
+         */
+        public function updateBybitDeposits(bool $debug = false)
+        {
+            echo "Refreshing Bybit Deposit History...\n";
+            $bybitDeposits = $this->bybit->getDeposits();
+            foreach ($bybitDeposits['result']['list'] as $i) {
+                $c = $this->sql->query("SELECT Count(*) as `total` FROM `bybit_deposits` WHERE `ticker` = :ticker AND `tx_id` = :tx_id", array(':ticker' => $i['coin'], ':tx_id' => $i['transfer_id']));
+                $count = $c->fetchObject();
+                if ($count->total == 0) {
+                    if ($debug) {
+                        echo $i['coin'] . ": " . $i['amount'] . " (" . $i['transfer_id'] . ")\n";
+                    }
+                    $vars = array(
+                        ':ticker' => $i['coin'], ':quantity' => $i['amount'], ':tx_id' => $i['transfer_id'],
+                        ':datetime' => $i['timestamp']
+                    );
+                    $this->sql->query("INSERT INTO `bybit_deposits` (`id`, `ticker`, `quantity`, `tx_id`, `datetime`) VALUES(NULL, :ticker, :quantity, :tx_id, FROM_UNIXTIME(:datetime))", $vars);
+                }
+            }
+            return 1;
+        }
+
+        /**
+         * Update Deposits for FTX.
+         *
+         * @return bool Return true if success.
+         */
+        public function updateFTXDeposits(bool $debug = false)
+        {
+            echo "Refreshing FTX Deposit History...\n";
+            $ftxDeposits = $this->ftx->getDeposits();
+            foreach ($ftxDeposits['result'] as $i) {
+                if (array_key_exists('fiat', $i)) {
+                    $c = $this->sql->query("SELECT Count(*) as `total` FROM `ftx_deposits` WHERE `ticker` = :ticker AND `payment_id` = :payment_id", array(':ticker' => $i['coin'], ':payment_id' => $i['paymentId']));
+                } else {
+                    $c = $this->sql->query("SELECT Count(*) as `total` FROM `ftx_deposits` WHERE `ticker` = :ticker AND `tx_id` = :tx_id", array(':ticker' => $i['coin'], ':tx_id' => $i['txid']));
+                }
+                $count = $c->fetchObject();
+                if ($count->total == 0) {
+                    if ($debug) {
+                        if (array_key_exists('fiat', $i)) {
+                            echo $i['coin'] . ": " . $i['size'] . " (" . strtoupper($i['type']) . " - " . $i['paymentId'] . ")\n";
+                        } else {
+                            echo $i['coin'] . ": " . $i['size'] . " (" . strtoupper($i['address']['method']) . " - " . $i['txid'] . ")\n";
+                        }
+                    }
+                    if (array_key_exists('fiat', $i)) {
+                        $vars = array(
+                            ':ticker' => $i['coin'], ':quantity' => $i['size'], 'fee' => $i['fee'],
+                            ':network' => strtoupper($i['type']), ':payment_id' => $i['paymentId'],
+                            ':datetime' => substr($i['creditedAt'], 0, -13), ':status' => strtoupper($i['status'])
+                        );
+                        $this->sql->query("INSERT INTO `ftx_deposits` (`id`, `ticker`, `quantity`, `fee`, `network`, `payment_id`, `datetime`, `status`) VALUES(NULL, :ticker, :quantity, :fee, :network, UUID_TO_BIN(:payment_id), :datetime, :status)", $vars);
+                    } else {
+                        $vars = array(
+                            ':ticker' => $i['coin'], ':quantity' => $i['size'], 'fee' => $i['fee'],
+                            ':network' => strtoupper($i['address']['method']), ':tx_id' => $i['txid'],
+                            ':datetime' => substr($i['confirmedTime'], 0, -13), ':confirmations' => $i['confirmations'],
+                            ':status' => strtoupper($i['status'])
+                        );
+                        $this->sql->query("INSERT INTO `ftx_deposits` (`id`, `ticker`, `quantity`, `fee`, `network`, `tx_id`, `datetime`, `confirmations`, `status`) VALUES(NULL, :ticker, :quantity, :fee, :network, :tx_id, :datetime, :confirmations, :status)", $vars);
+                    }
+                }
+            }
+            return 1;
+        }
+
+        /**
+         * Update Deposit History for all Exchanges.
+         *
+         * @return bool Return true if success.
+         */
+        public function updateDeposits()
+        {
+            $a = $this->updateBinanceDeposits();
+            $b = $this->updateBybitDeposits();
+            $c = $this->updateFTXDeposits();
+            $ret = $a * $b * $c;
+            return $ret;
+        }
+
+        /**
+         * Update Withdrawal History for all Exchanges.
+         *
+         * @return bool Return true if success.
+         */
+        public function updateWithdrawals()
+        {
+            $a = $this->updateBinanceWithdrawals();
+            $b = $this->updateBybitWithdrawals();
+            $c = $this->updateFTXWithdrawals();
             $ret = $a * $b * $c;
             return $ret;
         }

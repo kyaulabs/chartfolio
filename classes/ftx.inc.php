@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: ftx.inc.php,v 1.0.3 2022/03/28 16:36:33 kyau Exp $
+ * $KYAULabs: ftx.inc.php,v 1.0.4 2022/03/29 23:28:00 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -91,6 +91,8 @@ namespace APIs
         /**
          * Retrieve a specific assets market information.
          *
+         * @param string $pair Asset pair to search under.
+         *
          * @return array $json API returned data converted from JSON.
          */
         public function getPair(string $pair = null)
@@ -115,6 +117,8 @@ namespace APIs
         /**
          * Retrieve all previous orders based on watched pairs.
          *
+         * @param string $pair Asset pair to search under.
+         *
          * @return array $json API returned data converted from JSON.
          */
         public function getTrades(string $pair = null)
@@ -124,6 +128,28 @@ namespace APIs
                 return 0;
             }
             return $this->apiLookup("/orders/history", "market=" . $pair);
+        }
+
+        /**
+         * Retrieve the deposit history.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getDeposits()
+        {
+            return $this->apiLookup("/wallet/deposits");
+        }
+
+        /**
+         * Retrieve the withdrawal history for a specific ticker.
+         *
+         * @param string $ticker Ticker to look for deposits under.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getWithdrawals()
+        {
+            return $this->apiLookup("/wallet/withdrawals");
         }
     }
 

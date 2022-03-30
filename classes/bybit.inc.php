@@ -104,6 +104,8 @@ namespace APIs
         /**
          * Retrieve a specific assets market information.
          *
+         * @param string $pair Asset pair to look up.
+         *
          * @return array $json API returned data converted from JSON.
          */
         public function getPair(string $pair = null)
@@ -128,6 +130,8 @@ namespace APIs
         /**
          * Retrieve all previous orders based on watched pairs.
          *
+         * @param string $pair Asset pair to search under.
+         *
          * @return array $json API returned data converted from JSON.
          */
         public function getTrades(string $pair = null)
@@ -144,17 +148,29 @@ namespace APIs
         }
 
         /**
-         * Retrieve a specific order from the account history.
+         * Retrieve the deposit history.
          *
          * @return array $json API returned data converted from JSON.
          */
-        public function getOrder(string $pair = null, int $orderId = null)
+        public function getDeposits()
         {
-            if (count(array_filter(array($pair, $orderId))) == 1) {
+            return $this->apiLookup("/asset/v1/private/transfer/list");
+        }
+
+        /**
+         * Retrieve the withdrawal history for a specific ticker.
+         *
+         * @param string $ticker Ticker to look for deposits under.
+         *
+         * @return array $json API returned data converted from JSON.
+         */
+        public function getWithdrawals(string $ticker = null)
+        {
+            if ($ticker == null) {
                 throw new \Exception('Required parameter is null.');
                 return 0;
             }
-            return $this->apiLookup("/api/v3/order", "symbol=" . $pair . "&orderId=" . $orderId);
+            return $this->apiLookup("/sapi/v1/capital/withdraw/history", "coin=" . $ticker);
         }
     }
 
