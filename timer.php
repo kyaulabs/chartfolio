@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: timer.php,v 1.0.6 2022/03/28 16:43:33 kyau Exp $
+ * $KYAULabs: timer.php,v 1.0.7 2022/03/30 23:13:38 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -41,14 +41,12 @@ $bybit = new \APIs\Bybit();
 $ftx = new \APIs\FTX();
 $timer = new \Chartfolio\Update($binance, $bybit, $ftx, $sql);
 
-
-//$timer->updatePairs();
-//$timer->updateBalances();
-//$timer->updateTrades();
+$timer->logo();
+$timer->updatePairs();
+$timer->updateBalances();
+$timer->updateTrades();
 $timer->updateDeposits();
-//$timer->updateBinanceDeposits(true);
-//$timer->updateBybitDeposits(true);
-//$timer->updateFTXDeposits(true);
+$timer->updateWithdrawals();
 exit;
 
 switch (SYSTIME) {
@@ -57,7 +55,8 @@ switch (SYSTIME) {
         $timer->updateBalances();
         $timer->updateTrades();
         // every 15 minutes
-        //deposit/withdrawal
+        $timer->updateDeposits();
+        $timer->updateWithdrawals();
         // hourly
         $timer->updatePairs();
         break;
@@ -77,7 +76,8 @@ switch (SYSTIME) {
     case 30:
     case 45:
         // every 15 minutes
-        //deposit/withdrawal
+        $timer->updateDeposits();
+        $timer->updateWithdrawals();
         break;
     default:
         break;

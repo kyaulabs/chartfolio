@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: update.class.php,v 1.0.4 2022/03/28 16:36:17 kyau Exp $
+ * $KYAULabs: update.class.php,v 1.0.7 2022/03/30 23:13:10 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -63,14 +63,71 @@ namespace Chartfolio {
         }
 
         /**
+         * Display the Chartfolio Logo to the Console.
+         *
+         * @return bool Return true if success.
+         */
+        public function logo()
+        {
+            echo <<<EOF
+[6C[0;1;32m▄ [37m▄▄▄▄ ▄▄ ▄ ▄▄▄▄ ▄▄▄▄ ▄▄▄▄ [38;5;208m▄▄▄▄ ▄▄▄▄ ▄▄   ▄▄ ▄▄▄▄
+     [32m█▀ [37m██ █ ██ █ ██ █ ██ █  ██  [38;5;208m██ ▀ ██ █ ██   ██ ██ █
+    [32m█▀  [37m██   ██▄█ ██▄█ ██▄▀  ██  [38;5;208m██▀  ██ █ ██   ██ ██ █
+  [0;32m▄[1m█▀   [47m [37;40m█ █ [47m [40m█ █ [47m [40m█ █ [47m▀[40m█ █  [47m▐[40m█  [0;38;5;130m█[0;38;5;208m█   [0;38;5;130m█[0;38;5;208m█ █ [0;38;5;130m█[0;38;5;208m█▄▄ [0;38;5;208;48;5;130m▀[0;38;5;208m█ [0;38;5;130m█[0;38;5;208m█ █
+ [0;32m▀▀[5C[37m▀▀▀▀ ▀▀ ▀ ▀▀ ▀ ▀▀ ▀  ▀▀  [38;5;130m▀▀   ▀▀▀▀ ▀▀▀▀ ▀▀ ▀▀▀▀[0m
+[8C[1;30mDatabase Update[0m
+EOF;
+            echo "\n\n";
+            return 1;
+        }
+
+        /**
+         * Display a Section Header on the Console.
+         *
+         * @param string $exchange Name of the Exchange.
+         * @param string $section Section name to display.
+         *
+         * @return bool Return true if success.
+         */
+        private function section(string $exchange = null, string $section = null)
+        {
+            if (count(array_filter(array($exchange, $section))) == 1) {
+                return 0;
+            } else {
+                printf("[0;36m\u{25ab}[0;1;36m\u{25aa}[0m [0;1;37m%s:[0m %s", $exchange, $section);
+            }
+            return 1;
+        }
+
+        /**
+         * Validate a return result.
+         *
+         * @param bool $val Validation result to check.
+         *
+         * @return bool Return true if success.
+         */
+        private function validate(bool $val = false)
+        {
+            if ($val) {
+                printf(" [0;1;32m\u{221a}[0m\n");
+            } else {
+                printf(" [0;31mx[0m\n\n");
+                exit;
+            }
+            return 1;
+        }
+
+        /**
          * Update Asset Pairs for Binance.
+         *
+         * @param bool $debug Output all database inserts to the console?
          *
          * @return bool Return true if success.
          */
         public function updateBinancePairs(bool $debug = false)
         {
             // BINANCE
-            echo "Binance: Refreshing Asset Pairs...\n";
+            $this->section("Binance", "Asset Pairs");
             $binancePairs = $this->binance->getPairs();
             foreach ($binancePairs['symbols'] as $i) {
                 $pair = $this->binance->getPair($i['symbol']);
@@ -91,18 +148,21 @@ namespace Chartfolio {
                     $this->sql->query("INSERT INTO `binance_pairs` (`id`, `pair`, `ticker_base`, `ticker_quote`, `scale_base`, `scale_quote`, `fee_maker`, `fee_taker`, `mark_price`, `price_24h_pcnt`, `volume_24h`) VALUES (NULL, :pair, :ticker_base, :ticker_quote, :scale_base, :scale_quote, :fee_maker, :fee_taker, :mark_price, :price_24h_pcnt, :volume_24h)", $vars);
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Asset Pairs for Bybit.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateBybitPairs(bool $debug = false)
         {
             // BYBIT
-            echo "Bybit: Refreshing Asset Pairs...\n";
+            $this->section("Bybit", "Asset Pairs");
             $bybitPairs = $this->bybit->getPairs();
             foreach ($bybitPairs['result'] as $i) {
                 $pair = $this->bybit->getPair($i['name'])['result'][0];
@@ -124,18 +184,21 @@ namespace Chartfolio {
                     $this->sql->query("INSERT INTO `bybit_pairs` (`id`, `pair`, `ticker_base`, `ticker_quote`, `scale_quote`, `fee_maker`, `fee_taker`, `leverage_min`, `leverage_max`, `leverage_step`, `funding_rate`, `mark_price`, `price_24h_pcnt`, `volume_24h`) VALUES (NULL, :pair, :ticker_base, :ticker_quote, :scale_quote, :fee_maker, :fee_taker, :leverage_min, :leverage_max, :leverage_step, :funding_rate, :mark_price, :price_24h_pcnt, :volume_24h)", $vars);
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Asset Pairs for FTX.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateFTXPairs(bool $debug = false)
         {
             // FTX
-            echo "FTX: Refreshing Asset Pairs...\n";
+            $this->section("FTX", "Asset Pairs");
             $ftxPairs = $this->ftx->getPairs();
             foreach ($ftxPairs['result'] as $i) {
                 if ($debug) {
@@ -154,19 +217,22 @@ namespace Chartfolio {
                     $this->sql->query("INSERT INTO `ftx_pairs` (`id`, `pair`, `ticker_base`, `ticker_quote`, `scale_quote`, `fee_maker`, `fee_taker`, `mark_price`, `price_24h_pcnt`, `volume_24h`) VALUES (NULL, :pair, :ticker_base, :ticker_quote, :scale_quote, :fee_maker, :fee_taker, :mark_price, :price_24h_pcnt, :volume_24h)", $vars);
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Asset Pairs for all Exchanges.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
-        public function updatePairs()
+        public function updatePairs(bool $debug = false)
         {
-            $a = $this->updateBinancePairs();
-            $b = $this->updateBybitPairs();
-            $c = $this->updateFTXPairs();
+            $a = $this->updateBinancePairs($debug);
+            $b = $this->updateBybitPairs($debug);
+            $c = $this->updateFTXPairs($debug);
             $ret = $a * $b * $c;
             return $ret;
         }
@@ -174,11 +240,13 @@ namespace Chartfolio {
         /**
          * Update Wallet Balances for Binance.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateBinanceBalances(bool $debug = false)
         {
-            echo "Binance: Refreshing Wallet Balances...\n";
+            $this->section("Binance", "Wallet Balances");
             $binanceWallet = $this->binance->getBalances();
             foreach ($binanceWallet['balances'] as $i) {
                 if ($debug) {
@@ -195,17 +263,20 @@ namespace Chartfolio {
                     $this->sql->query("INSERT INTO `binance_wallet` (`id`, `ticker`, `free`, `locked`) VALUES (NULL, :ticker, :free, :locked)", $vars);
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Wallet Balances for Bybit.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateBybitBalances(bool $debug = false)
         {
-            echo "Bybit: Refreshing Wallet Balances...\n";
+            $this->section("Bybit", "Wallet Balances");
             $bybitWallet = $this->bybit->getBalances();
             foreach ($bybitWallet['result'] as $k => $i) {
                 if ($debug) {
@@ -228,17 +299,20 @@ namespace Chartfolio {
                     $this->sql->query("INSERT INTO `bybit_wallet` (`id`, `ticker`, `equity`, `available`, `used_margin`, `order_margin`, `position_margin`, `occ_closing_fee`, `occ_funding_fee`, `wallet_balance`, `realized_pnl`, `unrealized_pnl`, `total_realized_pnl`, `given_cash`, `service_cash`) VALUES (NULL, :ticker, :equity, :available, :used_margin, :order_margin, :position_margin, :occ_closing_fee, :occ_funding_fee, :wallet_balance, :realized_pnl, :unrealized_pnl, :total_realized_pnl, :given_cash, :service_cash)", $vars);
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Wallet Balances for FTX.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateFTXBalances(bool $debug = false)
         {
-            echo "FTX: Refreshing Wallet Balances...\n";
+            $this->section("FTX", "Wallet Balances");
             $ftxWallet = $this->ftx->getBalances();
             foreach ($ftxWallet['result'] as $i) {
                 if ($debug) {
@@ -260,18 +334,22 @@ namespace Chartfolio {
                     $this->sql->query("INSERT INTO `ftx_wallet` (`id`, `ticker`, `free`, `spot_borrow`, `total`, `available`) VALUES (NULL, :ticker, :free, :spot_borrow, :total, :available)", $vars);
                 }
             }
+            $this->validate(true);
+            return 1;
         }
 
         /**
          * Update Wallet Balances for all Exchanges.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
-        public function updateBalances()
+        public function updateBalances(bool $debug = false)
         {
-            $a = $this->updateBinanceBalances();
-            $b = $this->updateBybitBalances();
-            $c = $this->updateFTXBalances();
+            $a = $this->updateBinanceBalances($debug);
+            $b = $this->updateBybitBalances($debug);
+            $c = $this->updateFTXBalances($debug);
             $ret = $a * $b * $c;
             return $ret;
         }
@@ -279,11 +357,13 @@ namespace Chartfolio {
         /**
          * Update Trades for Binance.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateBinanceTrades(bool $debug = false)
         {
-            echo "Refreshing Binance Trade History...\n";
+            $this->section("Binance", "Trade History");
             $ret = $this->sql->query("SELECT `pair` FROM `binance_pairs` WHERE `watch` = 1");
             $symbols = $ret->fetchAll();
             foreach ($symbols as $s) {
@@ -314,17 +394,20 @@ namespace Chartfolio {
                     }
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Trades for Bybit.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateBybitTrades(bool $debug = false)
         {
-            echo "Refreshing Bybit Trade History...\n";
+            $this->section("Bybit", "Trade History");
             $ret = $this->sql->query("SELECT `pair` FROM `bybit_pairs` WHERE `watch` = 1");
             $symbols = $ret->fetchAll();
             foreach ($symbols as $s) {
@@ -352,17 +435,20 @@ namespace Chartfolio {
                     }
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Trades for FTX.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateFTXTrades(bool $debug = false)
         {
-            echo "Refreshing FTX Trade History...\n";
+            $this->section("FTX", "Trade History");
             $ret = $this->sql->query("SELECT `pair` FROM `ftx_pairs` WHERE `watch` = 1");
             $symbols = $ret->fetchAll();
             foreach ($symbols as $s) {
@@ -387,19 +473,22 @@ namespace Chartfolio {
                     }
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Trade History for all Exchanges.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
-        public function updateTrades()
+        public function updateTrades(bool $debug = false)
         {
-            $a = $this->updateBinanceTrades();
-            $b = $this->updateBybitTrades();
-            $c = $this->updateFTXTrades();
+            $a = $this->updateBinanceTrades($debug);
+            $b = $this->updateBybitTrades($debug);
+            $c = $this->updateFTXTrades($debug);
             $ret = $a * $b * $c;
             return $ret;
         }
@@ -407,11 +496,13 @@ namespace Chartfolio {
         /**
          * Update Deposits for Binance.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateBinanceDeposits(bool $debug = false)
         {
-            echo "Refreshing Binance Deposit History...\n";
+            $this->section("Binance", "Deposit History");
             $ret = $this->sql->query("SELECT `ticker_base`, `ticker_quote` FROM `binance_pairs` WHERE `watch` = 1");
             $symbols = $ret->fetchAll();
             $tickers = array();
@@ -443,18 +534,26 @@ namespace Chartfolio {
                     }
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Deposits for Bybit.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateBybitDeposits(bool $debug = false)
         {
-            echo "Refreshing Bybit Deposit History...\n";
+            $this->section("Bybit", "Deposit History");
             $bybitDeposits = $this->bybit->getDeposits();
+            if (is_null($bybitDeposits['result']['list'])) {
+                // no deposits
+                $this->validate(true);
+                return 1;
+            }
             foreach ($bybitDeposits['result']['list'] as $i) {
                 $c = $this->sql->query("SELECT Count(*) as `total` FROM `bybit_deposits` WHERE `ticker` = :ticker AND `tx_id` = :tx_id", array(':ticker' => $i['coin'], ':tx_id' => $i['transfer_id']));
                 $count = $c->fetchObject();
@@ -469,17 +568,20 @@ namespace Chartfolio {
                     $this->sql->query("INSERT INTO `bybit_deposits` (`id`, `ticker`, `quantity`, `tx_id`, `datetime`) VALUES(NULL, :ticker, :quantity, :tx_id, FROM_UNIXTIME(:datetime))", $vars);
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Deposits for FTX.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
         public function updateFTXDeposits(bool $debug = false)
         {
-            echo "Refreshing FTX Deposit History...\n";
+            $this->section("FTX", "Deposit History");
             $ftxDeposits = $this->ftx->getDeposits();
             foreach ($ftxDeposits['result'] as $i) {
                 if (array_key_exists('fiat', $i)) {
@@ -498,14 +600,14 @@ namespace Chartfolio {
                     }
                     if (array_key_exists('fiat', $i)) {
                         $vars = array(
-                            ':ticker' => $i['coin'], ':quantity' => $i['size'], 'fee' => $i['fee'],
+                            ':ticker' => $i['coin'], ':quantity' => $i['size'], ':fee' => $i['fee'],
                             ':network' => strtoupper($i['type']), ':payment_id' => $i['paymentId'],
                             ':datetime' => substr($i['creditedAt'], 0, -13), ':status' => strtoupper($i['status'])
                         );
                         $this->sql->query("INSERT INTO `ftx_deposits` (`id`, `ticker`, `quantity`, `fee`, `network`, `payment_id`, `datetime`, `status`) VALUES(NULL, :ticker, :quantity, :fee, :network, UUID_TO_BIN(:payment_id), :datetime, :status)", $vars);
                     } else {
                         $vars = array(
-                            ':ticker' => $i['coin'], ':quantity' => $i['size'], 'fee' => $i['fee'],
+                            ':ticker' => $i['coin'], ':quantity' => $i['size'], ':fee' => $i['fee'],
                             ':network' => strtoupper($i['address']['method']), ':tx_id' => $i['txid'],
                             ':datetime' => substr($i['confirmedTime'], 0, -13), ':confirmations' => $i['confirmations'],
                             ':status' => strtoupper($i['status'])
@@ -514,33 +616,154 @@ namespace Chartfolio {
                     }
                 }
             }
+            $this->validate(true);
             return 1;
         }
 
         /**
          * Update Deposit History for all Exchanges.
          *
+         * @param bool $debug Output all database inserts to the console?
+         *
          * @return bool Return true if success.
          */
-        public function updateDeposits()
+        public function updateDeposits(bool $debug = false)
         {
-            $a = $this->updateBinanceDeposits();
-            $b = $this->updateBybitDeposits();
-            $c = $this->updateFTXDeposits();
+            $a = $this->updateBinanceDeposits($debug);
+            $b = $this->updateBybitDeposits($debug);
+            $c = $this->updateFTXDeposits($debug);
             $ret = $a * $b * $c;
             return $ret;
         }
 
         /**
-         * Update Withdrawal History for all Exchanges.
+         * Update Withdrawals for Binance.
+         *
+         * @param bool $debug Output all database inserts to the console?
          *
          * @return bool Return true if success.
          */
-        public function updateWithdrawals()
+        public function updateBinanceWithdrawals(bool $debug = false)
         {
-            $a = $this->updateBinanceWithdrawals();
-            $b = $this->updateBybitWithdrawals();
-            $c = $this->updateFTXWithdrawals();
+            $this->section("Binance", "Withdrawal History");
+            $ret = $this->sql->query("SELECT `ticker_base`, `ticker_quote` FROM `binance_pairs` WHERE `watch` = 1");
+            $symbols = $ret->fetchAll();
+            $tickers = array();
+            foreach ($symbols as $s) {
+                $ticka = $s['ticker_base'];
+                $tickb = $s['ticker_quote'];
+                if (! in_array($ticka, $tickers) ) {
+                    array_push($tickers, $ticka);
+                }
+                if (! in_array($tickb, $tickers) ) {
+                    array_push($tickers, $tickb);
+                }
+            }
+            foreach ($tickers as $t) {
+                $binanceWithdrawals = $this->binance->getWithdrawals($t);
+                foreach ($binanceWithdrawals as $i) {
+                    $c = $this->sql->query("SELECT Count(*) as `total` FROM `binance_withdrawals` WHERE `ticker` = :ticker AND `tx_id` = :tx_id", array(':ticker' => $i['coin'], ':tx_id' => $i['txId']));
+                    $count = $c->fetchObject();
+                    if ($count->total == 0) {
+                        if ($debug) {
+                            echo $i['coin'] . ": " . $i['amount'] . " (" . $i['network'] . " - " . $i['address'] . ")\n";
+                        }
+                        $status = array(
+                            0 => 'EMAIL_SENT', 1 => 'CANCELLED', 2 => 'AWAITING_APPROVAL',
+                            3 => 'REJECTED', 4 => 'PROCESSING', 5 => 'FAILURE', 6 => 'COMPLETED'
+                        );
+                        $vars = array(
+                            ':ticker' => $i['coin'], ':quantity' => $i['amount'], ':tx_id' => $i['txId'],
+                            ':tx_addr' => $i['address'], ':tx_fee' => $i['transactionFee'],
+                            ':tx_network' => $i['network'], ':datetime' => $i['applyTime'],
+                            ':status' => $status[$i['status']]
+                        );
+                        $this->sql->query("INSERT INTO `binance_withdrawals` (`id`, `ticker`, `quantity`, `tx_id`, `tx_addr`, `tx_fee`, `tx_network`, `datetime`, `status`) VALUES (NULL, :ticker, :quantity, :tx_id, :tx_addr, :tx_fee, :tx_network, :datetime, :status)", $vars);
+                    }
+                }
+            }
+            $this->validate(true);
+            return 1;
+        }
+
+        /**
+         * Update Withdrawals for Bybit.
+         *
+         * @param bool $debug Output all database inserts to the console?
+         *
+         * @return bool Return true if success.
+         */
+        public function updateBybitWithdrawals(bool $debug = false)
+        {
+            $this->section("Bybit", "Withdrawals History");
+            $bybitWithdrawals = $this->bybit->getWithdrawals();
+            if (is_null($bybitWithdrawals['result']['data'])) {
+                // no withdrawals
+                $this->validate(true);
+                return 1;
+            }
+            foreach ($bybitWithdrawals['result']['data'] as $i) {
+                $c = $this->sql->query("SELECT Count(*) as `total` FROM `bybit_deposits` WHERE `ticker` = :ticker AND `tx_id` = :tx_id", array(':ticker' => $i['coin'], ':tx_id' => $i['tx_id']));
+                $count = $c->fetchObject();
+                if ($count->total == 0) {
+                    if ($debug) {
+                        echo $i['coin'] . ": " . $i['amount'] . " (" . $i['tx_id'] . ")\n";
+                    }
+                    $vars = array(
+                        ':ticker' => $i['coin'], ':quantity' => $i['amount'], ':tx_id' => $i['tx_id'],
+                        ':tx_addr' => $i['address'], ':tx_fee' => $i['fee'], ':datetime' => substr($i['timestamp'], 0, -5),
+                        ':status' => strtoupper($i['status'])
+                    );
+                    $this->sql->query("INSERT INTO `bybit_withdrawals` (`id`, `ticker`, `quantity`, `tx_id`, `tx_addr`, `tx_fee`, `datetime`, `status`) VALUES(NULL, :ticker, :quantity, :tx_id, :tx_addr, :tx_fee, :datetime, :status)", $vars);
+                }
+            }
+            $this->validate(true);
+            return 1;
+        }
+
+        /**
+         * Update Withdrawals for FTX.
+         *
+         * @param bool $debug Output all database inserts to the console?
+         *
+         * @return bool Return true if success.
+         */
+        public function updateFTXWithdrawals(bool $debug = false)
+        {
+            $this->section("FTX", "Withdrawal History");
+            $ftxWithdrawals = $this->ftx->getWithdrawals();
+            foreach ($ftxWithdrawals['result'] as $i) {
+                $c = $this->sql->query("SELECT Count(*) as `total` FROM `ftx_withdrawals` WHERE `ticker` = :ticker AND `tx_id` = :tx_id", array(':ticker' => $i['coin'], ':tx_id' => $i['txid']));
+                $count = $c->fetchObject();
+                if ($count->total == 0) {
+                    if ($debug) {
+                        echo $i['coin'] . ": " . $i['size'] . " (" . strtoupper($i['method']) . " - " . $i['txid'] . ")\n";
+                    }
+                    $vars = array(
+                        ':ticker' => $i['coin'], ':quantity' => $i['size'], ':tx_id' => $i['txid'],
+                        ':tx_addr' => $i['address'], ':tx_name' => $i['destinationName'], ':tx_fee' => $i['fee'],
+                        ':tx_network' => strtoupper($i['method']), ':datetime' => substr($i['time'], 0, -13),
+                        ':status' => strtoupper($i['status'])
+                    );
+                    $this->sql->query("INSERT INTO `ftx_withdrawals` (`id`, `ticker`, `quantity`, `tx_id`, `tx_addr`, `tx_name`, `tx_fee`, `tx_network`, `datetime`, `status`) VALUES(NULL, :ticker, :quantity, :tx_id, :tx_addr, :tx_name, :tx_fee, :tx_network, :datetime, :status)", $vars);
+                }
+            }
+            $this->validate(true);
+            return 1;
+        }
+
+        /**
+         * Update Withdrawal History for all Exchanges.
+         *
+         * @param bool $debug Output all database inserts to the console?
+         *
+         * @return bool Return true if success.
+         */
+        public function updateWithdrawals(bool $debug = false)
+        {
+            $a = $this->updateBinanceWithdrawals($debug);
+            $b = $this->updateBybitWithdrawals($debug);
+            $c = $this->updateFTXWithdrawals($debug);
             $ret = $a * $b * $c;
             return $ret;
         }

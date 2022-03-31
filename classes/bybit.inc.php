@@ -1,7 +1,7 @@
 <?php
 
 /**
- * $KYAULabs: bybit.inc.php,v 1.0.3 2022/03/28 15:30:23 kyau Exp $
+ * $KYAULabs: bybit.inc.php,v 1.0.4 2022/03/30 23:12:52 kyau Exp $
  * ▄▄▄▄ ▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
  * █ ▄▄ ▄ ▄▄ ▄ ▄▄▄▄ ▄▄ ▄    ▄▄   ▄▄▄▄ ▄▄▄▄  ▄▄▄ ▀
  * █ ██ █ ██ █ ██ █ ██ █    ██   ██ █ ██ █ ██▀  █
@@ -160,17 +160,11 @@ namespace APIs
         /**
          * Retrieve the withdrawal history for a specific ticker.
          *
-         * @param string $ticker Ticker to look for deposits under.
-         *
          * @return array $json API returned data converted from JSON.
          */
-        public function getWithdrawals(string $ticker = null)
+        public function getWithdrawals()
         {
-            if ($ticker == null) {
-                throw new \Exception('Required parameter is null.');
-                return 0;
-            }
-            return $this->apiLookup("/sapi/v1/capital/withdraw/history", "coin=" . $ticker);
+            return $this->apiLookup("/v2/private/wallet/withdraw/list");
         }
     }
 
